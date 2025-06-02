@@ -15,17 +15,20 @@ const pathSrc = path.resolve(__dirname, 'src')
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    outDir: '../mathilda/static',  // 直接输出到FastAPI目录
+    emptyOutDir: true,  // 构建前清空目标目录
+  },
   server: {
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000', // 目标服务器的URL
         changeOrigin: true, // 是否改变源
-        rewrite: (path) => path.replace(/\/api/, '') // 路径重写规则
       },
-      '/favicon.ico':{
-        target: 'http://127.0.0.1:8000', // 目标服务器的URL
-        changeOrigin: true, // 是否改变源
-      }
+      // '/favicon.ico':{
+      //   target: 'http://127.0.0.1:8000', // 目标服务器的URL
+      //   changeOrigin: true, // 是否改变源
+      // }
     }
   },
   plugins: [

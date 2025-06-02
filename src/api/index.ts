@@ -13,12 +13,15 @@ interface ApiClientConfig {
 
 // 创建一个Axios实例
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:5173/api/v1/', // 替换为你的API的基础URL
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+const futures_api_path = '/api/v1/futures'
+
 
 // 添加请求拦截器
 apiClient.interceptors.request.use(
@@ -55,8 +58,6 @@ interface Api {
   updateTest: (data: any) => Promise<AxiosResponse<any>>;
   startTest: (id: number) => Promise<AxiosResponse<any>>;
   deleteTest: (id: number) => Promise<AxiosResponse<any>>;
-  updateExampleData: (id: string | number, data: any) => Promise<AxiosResponse<any>>;
-  deleteExampleData: (id: string | number) => Promise<AxiosResponse<any>>;
   getTestResults: (id: string | number, page: number, page_size: number) => Promise<PaginatedResponse<TestResult>>;
   downloadTestResults: (id: string | number) => Promise<void>;
   downloadTransactionsZip: (id: string | number) => Promise<void>;
@@ -79,7 +80,7 @@ const api: Api = {
         throw new Error('每页数量需在 1-100 之间');
       }
 
-      const response: AxiosResponse<PaginatedResponse<Test>> = await apiClient.get('futures/gettests', {
+      const response: AxiosResponse<PaginatedResponse<Test>> = await apiClient.get(`${futures_api_path}/gettests`, {
         params: {
           page,
           page_size
@@ -109,14 +110,14 @@ const api: Api = {
     }
   },
   getAllStrategies: () => {
-    return apiClient.get('futures/getallstrategies');
+    return apiClient.get(`${futures_api_path}/getallstrategies`);
   },
   addTest: (data: any) => {
-    return apiClient.post('futures/addtest', data);
+    return apiClient.post(`${futures_api_path}/addtest`, data);
   },
   updateTest: async (data: any) => {
     try {
-      const response = await apiClient.post('futures/updatetest', data);
+      const response = await apiClient.post(`${futures_api_path}/updatetest`, data);
       if (response.data.status != StatusCode.SUCCESS)
         throw new Error(`更新测试失败: ${response.data.message}`);
       return response.data;
@@ -131,7 +132,7 @@ const api: Api = {
   },
   startTest: async (id: number) => {
     try {
-      const response = await apiClient.put(`futures/execute?id=${id}`)
+      const response = await apiClient.put(`${futures_api_path}/execute?id=${id}`)
       if (response.data.status != StatusCode.SUCCESS)
         throw new Error(`执行测试失败: ${response.data.message}`);
       return response.data;
@@ -146,7 +147,7 @@ const api: Api = {
   },
   deleteTest: async (id: number) => {
     try {
-      const response = await apiClient.put(`futures/deletetest?id=${id}`)
+      const response = await apiClient.put(`${futures_api_path}/deletetest?id=${id}`)
       if (response.data.status != StatusCode.SUCCESS)
         throw new Error(`删除测试失败: ${response.data.message}`);
       return response.data;
@@ -159,14 +160,6 @@ const api: Api = {
       throw new Error(`请求异常: ${error instanceof Error ? error.message : String(error)}`);
     }
   },
-  // PUT请求示例
-  updateExampleData: (id: string | number, data: any) => {
-    return apiClient.put(`/example-endpoint/${id}`, data);
-  },
-  // DELETE请求示例
-  deleteExampleData: (id: string | number) => {
-    return apiClient.delete(`/example-endpoint/${id}`);
-  },
   // 获取测试结果
   getTestResults: async (test_id: string | number, page: number, page_size: number): Promise<PaginatedResponse<TestResult>> => {
     try {
@@ -176,7 +169,7 @@ const api: Api = {
         throw new Error('每页数量需在 1-100 之间');
       }
 
-      const response: AxiosResponse<PaginatedResponse<TestResult>> = await apiClient.get('futures/gettestresults', {
+      const response: AxiosResponse<PaginatedResponse<TestResult>> = await apiClient.get(`${futures_api_path}/gettestresults`, {
         params: {
           test_id,
           page,
@@ -204,7 +197,7 @@ const api: Api = {
   downloadTestResults: async (test_id: string | number) => {
     try {
       const response = await apiClient.get(
-        `futures/test/${test_id}/report`,
+        `${futures_api_path}/test/${test_id}/report`,
         { responseType: 'blob' }
       );
 
@@ -244,7 +237,7 @@ const api: Api = {
   downloadTransactionsZip: async (test_id: string | number) => {
     try {
       const response = await apiClient.get(
-        `futures/test/${test_id}/transactions_zip`,
+        `${futures_api_path}/test/${test_id}/transactions_zip`,
         { responseType: 'blob' }
       );
 
