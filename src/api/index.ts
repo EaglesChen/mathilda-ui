@@ -20,9 +20,8 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-const futures_api_path = '/api/v1/futures'
+const futures_api_path = '/v1/futures'
 
-console.log(import.meta.env.VITE_API_BASE_URL + futures_api_path)
 // 添加请求拦截器
 apiClient.interceptors.request.use(
   (config) => {

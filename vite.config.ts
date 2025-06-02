@@ -28,8 +28,37 @@ export default defineConfig(({ mode }) => {
   // 是否为生产环境
   const isProduction = mode === 'production'
 
+  const proxyConfig = {
+    target: 'http://127.0.0.1:8000',
+    changeOrigin: true,
+    secure: false,
+    configure: (proxy) => {
+      // 代理请求事件
+      proxy.on('proxyReq', (proxyReq, req) => {
+        console.log(`[请求代理] ${req.method} ${req.url} => ${proxyConfig.target}${req.originalUrl}`)
+      })
+      
+      // 代理响应事件
+      proxy.on('proxyRes', (proxyRes, req, res) => {
+        console.log(`[响应代理] ${req.url} => ${proxyRes.statusCode} ${proxyRes.statusMessage}`)
+      })
+      
+      // 代理错误事件
+      proxy.on('error', (err, req, res) => {
+        console.error(`[代理错误] ${req.url}:`, err.message)
+      })
+    }
+  }
+
   return {
     base: isProduction ? '/static/' : '/',
+    server: {
+      proxy: {
+        '/api': proxyConfig, // 匹配所有以/api开头的路径
+      },
+      open: true,
+      port: 5173
+    },
     build: {
       outDir: '../mathilda/static',  // 直接输出到FastAPI目录
       emptyOutDir: true,  // 构建前清空目标目录
@@ -52,16 +81,6 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: `assets/[name]${isProduction ? '.[hash]' : ''}.js`,
           assetFileNames: `assets/[name]${isProduction ? '.[hash]' : ''}.[ext]`
         }
-      }
-    },
-    server: {
-      port: 5173,
-      proxy: {
-        '/api': {
-          target: env.VITE_API_BASE_URL, // 目标服务器的URL
-          changeOrigin: true, // 是否改变源
-          rewrite: (path) => path.replace(/^\/api/, '')
-        },
       }
     },
     plugins: [
