@@ -1,0 +1,37 @@
+@import './base.css';
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: rgb(235, 120, 170);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+
+.form-card .m-form-item .el-form-item__label {
+  color: var(--color-text);
+}
+
+.form-card .sub-title {
+  border-top-color: var(--color-border);
+}
+
+.form-card .sub-title .el-divider__text {
+  color: var(--color-text);
+  background-color: var(--color-background-mute);
+
+}
