@@ -50,7 +50,6 @@ apiClient.interceptors.response.use(
 
 // 封装API方法的类型
 interface Api {
-  getTest: () => Promise<AxiosResponse<any>>;
   getTests: (page: number, page_size: number) => Promise<PaginatedResponse<Test>>;
   getAllStrategies: () => Promise<AxiosResponse<any>>;
   addTest: (data: any) => Promise<AxiosResponse<any>>;
@@ -64,10 +63,6 @@ interface Api {
 
 // 实现API方法
 const api: Api = {
-  // GET请求示例
-  getTest: () => {
-    return null
-  },
   getTests: async (
     page: number = 1,
     page_size: number = 10

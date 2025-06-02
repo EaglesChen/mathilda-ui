@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    // 修改 module 为兼容版本
+    "module": "ESNext",  // 或 ES2022
+    
+    // 确保包含这些关键设置
+    "target": "ESNext",
+    "moduleResolution": "Node",
+    "isolatedModules": true,
+    
+    // 其他重要设置
+    "useDefineForClassFields": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["node_modules"]
+}
