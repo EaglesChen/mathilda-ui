@@ -1,4 +1,9 @@
 export function deepAssign<T>(target: T, source: Partial<T>): T {
+  // 处理源对象为null或undefined的情况
+  if (source === null || source === undefined) {
+    return target;
+  }
+  
   Object.keys(source).forEach(key => {
     const sourceValue = (source as any)[key]
     const targetValue = (target as any)[key]

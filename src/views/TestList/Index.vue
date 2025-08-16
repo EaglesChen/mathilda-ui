@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Test, PaginatedResponse, ExecutionStatus, TestType, TestModel } from '@/model'
+import { Test, PaginatedResponse, ExecutionStatus, TestType } from '@/model'
 import { formatDate } from '@/utils/date'
 import EditDialog from '@/components/EditTestDialog.vue'
 import ReportDialog from '@/components/ReportDialog.vue'
@@ -137,7 +137,7 @@ const testTypeMap = {
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const testData = ref<PaginatedResponse<TestModel>>({
+const testData = ref<PaginatedResponse<Test>>({
   status: 200,
   total: 0,
   page: 1,
@@ -171,22 +171,13 @@ const fetchTests = async (silent = false) => {
 }
 
 // 数据转换逻辑
-const mapTestItem = (item: Test): TestModel => ({
+const mapTestItem = (item: Test): Test => ({
   ...item,
   executed_at: item.execution_status === ExecutionStatus.RUNNING
     ? item.executed_at || new Date().toISOString()
     : null,
-  ...parseTestParams(item)
 })
 
-// 参数解析逻辑
-const parseTestParams = (item: Test) => {
-  const params = JSON.parse(item.test_params)
-  return {
-    test_params_fixed: item.type === TestType.BACKTEST ? params : {},
-    test_params_range: item.type === TestType.PARAMETER_OPTIMIZATION ? params : {}
-  }
-}
 
 // 修改自动刷新方法
 const startAutoRefresh = () => {
@@ -279,7 +270,7 @@ const stopTimer = () => {
 //#endregion
 //#region 对话框相关
 
-const currentTest = ref<TestModel | null>(null)
+const currentTest = ref<Test | null>(null)
 const test_id = ref<number | null>(null)
 const mode = ref('edit')
 
@@ -288,13 +279,13 @@ const editDialogVisible = ref(false)
 const reportDialogVisible = ref(false)
 
 
-const showParams = (test: TestModel) => {
+const showParams = (test: Test) => {
   mode.value = 'view'
   currentTest.value = test
   editDialogVisible.value = true
 }
 
-const openEditDialog = (test: TestModel) => {
+const openEditDialog = (test: Test) => {
   mode.value = 'edit'
   currentTest.value = test
   editDialogVisible.value = true

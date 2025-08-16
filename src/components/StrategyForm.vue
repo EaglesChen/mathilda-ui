@@ -46,92 +46,23 @@
                 </el-radio-group>
             </el-form-item>
 
-            <!-- 动态参数区 -->
-            <!-- <template v-if="currentStrategyParams.length">
-                <el-divider class="sub-title">
-                    {{ form.type === 0 ? '回测参数' : '优化参数' }}
-                </el-divider>
-
-                <template v-if="form.type === 0">
-                    <el-form-item v-for="param in currentStrategyParams" :key="param.name" :label="param.display_name"
-                        class="m-form-item">
-                        <el-input-number v-model="form.test_params_fixed[param.name]"
-                            :precision="param.value_type === 'float' ? 2 : 0" :controls="param.value_type !== 'string'"
-                            :min="0" controls-position="right" :disabled="mode === 'view'" />
-                    </el-form-item>
-                </template>
-
-<template v-else>
-                    <el-form-item v-for="param in currentStrategyParams" :key="param.name" :label="param.display_name"
-                        class="m-form-item">
-                        <el-row :gutter="10">
-                            <el-col :span="8">
-                                <span v-if="mode === 'view'">{{ form.test_params_range[param.name]?.from }}</span>
-                                <el-input v-else v-model="form.test_params_range[param.name].from" placeholder="最小值"
-                                    :type="param.value_type === 'string' ? 'text' : 'number'" />
-                            </el-col>
-                            <el-col :span="8">
-                                <span v-if="mode === 'view'">{{ form.test_params_range[param.name]?.to }}</span>
-                                <el-input v-else v-model="form.test_params_range[param.name].to" placeholder="最大值"
-                                    :type="param.value_type === 'string' ? 'text' : 'number'" />
-                            </el-col>
-                            <el-col :span="8">
-                                <span v-if="mode === 'view'">{{ form.test_params_range[param.name]?.step }}</span>
-                                <el-input v-else v-model="form.test_params_range[param.name].step" placeholder="步长"
-                                    :type="param.value_type === 'string' ? 'text' : 'number'" />
-                            </el-col>
-                        </el-row>
-                    </el-form-item>
-                </template>
-</template> -->
-
-            <!-- 动态参数区 -->
+            <!-- 动态参数区（JSON格式） -->
             <template v-if="currentStrategyParams.length">
                 <el-divider class="sub-title">
                     {{ form.type === 0 ? '回测参数' : '优化参数' }}
                 </el-divider>
 
-                <template v-for="param in currentStrategyParams" :key="param.name">
-                    <!-- 优化模式下的参数显示 -->
-                    <template v-if="form.type === 1">
-                        <!-- 支持优化的参数 -->
-                        <el-form-item v-if="param.optimization" :label="param.display_name" class="m-form-item">
-                            <el-row :gutter="10">
-                                <el-col :span="8">
-                                    <el-input-number v-model.number="form.test_params_range[param.name].from"
-                                        placeholder="最小值" :precision="param.value_type === 'float' ? 2 : 0" :min="0"
-                                        controls-position="right" :disabled="mode === 'view'" />
-                                </el-col>
-                                <el-col :span="8">
-                                    <el-input-number v-model.number="form.test_params_range[param.name].to"
-                                        placeholder="最大值" :precision="param.value_type === 'float' ? 2 : 0" :min="0"
-                                        controls-position="right" :disabled="mode === 'view'" />
-                                </el-col>
-                                <el-col :span="8">
-                                    <el-input-number v-model.number="form.test_params_range[param.name].step"
-                                        placeholder="步长" :precision="param.value_type === 'float' ? 2 : 0" :min="0"
-                                        controls-position="right" :disabled="mode === 'view'" />
-                                </el-col>
-                            </el-row>
-                        </el-form-item>
-
-                        <!-- 不支持的优化参数显示为固定值 -->
-                        <el-form-item v-else :label="param.display_name" class="m-form-item">
-                            <el-input-number v-model="form.test_params_range[param.name]"
-                                :precision="param.value_type === 'float' ? 2 : 0" :min="0" controls-position="right"
-                                :disabled="mode === 'view'" />
-                        </el-form-item>
-                    </template>
-
-                    <!-- 回测模式下的参数显示 -->
-                    <template v-else>
-                        <el-form-item :label="param.display_name" class="m-form-item">
-                            <el-input-number v-model="form.test_params_fixed[param.name]"
-                                :precision="param.value_type === 'float' ? 2 : 0" :min="0" controls-position="right"
-                                :disabled="mode === 'view'" />
-                        </el-form-item>
-                    </template>
-                </template>
+                <el-form-item label="参数配置(JSON)" class="m-form-item">
+                    <el-input 
+                        v-model="form.test_params" 
+                        type="textarea" 
+                        :rows="form.type === 0 ? 4 : 8"
+                        :readonly="mode === 'view'"
+                    />
+                <div class="json-hint" v-if="mode !== 'view'">
+                    {{ form.type === 0 ? fixedExampleWithLabels :  rangeExampleWithLabels }}
+                </div>
+                </el-form-item>
             </template>
             <!-- 操作按钮 -->
             <div class="form-actions" v-if="mode !== 'view'">
@@ -148,28 +79,20 @@ import { reactive, ref, onMounted, PropType, watch, computed } from 'vue'
 import { ElMessage, FormInstance, FormRules } from 'element-plus'
 import { useRouter } from 'vue-router'
 import api from '@/api'
-import { ParamRange, Strategy, TestModel } from '@/model'
+import { ParamRange, Strategy, Test } from '@/model'
 import { deepAssign, deepClone } from '@/utils/object'
-import { convertValueType } from '@/utils/type'
-
 
 type FormMode = 'create' | 'edit' | 'view'
-
-
 
 const formRef = ref<FormInstance>()
 const loading = ref(false) // 新增加载状态
 const strategies = ref<Strategy[]>([]) // 新增策略列表
 const strategiesLoaded = ref(false) // 新增策略加载状态标识 
-const paramCache = reactive<Record<number, {
-    fixed: Record<string, any>
-    range: Record<string, any>
-}>>({})
+const paramCache = reactive<Record<number, string>>({}) // 缓存JSON字符串
 
 
-
-const form = reactive<TestModel>({
-    id: null,
+const form = reactive<Test>({
+    id: -1,
     strategy_id: '',
     name: '',
     tag: '',
@@ -177,15 +100,47 @@ const form = reactive<TestModel>({
     end: '',
     type: 0,
     execution_status: 0,
-    test_params: '',
+    test_params: '', // 绑定表单的JSON参数
     created_at: '',
     executed_at: '',
-    test_params_range: {
-    },
-    test_params_fixed: {}
 })
 
-const rules = reactive<FormRules<TestModel>>({
+const validateJson = (rule: any, value: string, callback: any) => {
+  if (!value) return callback()
+  try {
+    const json = JSON.parse(value)
+    // 额外验证：回测模式必须是键值对，优化模式区分处理
+    if (form.type === 0) {
+      // 回测参数：值必须是基础类型（number/string/boolean）
+      Object.values(json).forEach(val => {
+        if (typeof val === 'object' && val !== null) {
+          throw new Error('回测参数值不能是对象')
+        }
+      })
+    } else {
+      // 优化参数：可优化参数必须包含from/to/step，不可优化参数必须是基础类型
+      Object.entries(json).forEach(([key, val]) => {
+        const param = currentStrategyParams.value.find(p => p.name === key)
+        if (param?.optimization !== false) {
+          // 可优化参数验证
+          if (!val || typeof val !== 'object' || !('from' in val) || !('to' in val) || !('step' in val)) {
+            throw new Error(`优化参数 ${key} 必须包含from、to、step字段`)
+          }
+        } else {
+          // 不可优化参数验证（同回测模式）
+          if (typeof val === 'object' && val !== null) {
+            throw new Error(`参数 ${key} 不可优化，不能是对象`)
+          }
+        }
+      })
+    }
+    callback()
+  } catch (e) {
+    callback(new Error(`JSON格式不正确: ${(e as Error).message}`))
+  }
+}
+
+const rules = reactive<FormRules<Test>>({
     name: [
         { required: true, message: '请输入品种名称', trigger: 'blur' }
     ],
@@ -196,49 +151,19 @@ const rules = reactive<FormRules<TestModel>>({
         { required: true, message: '请选择交易策略', trigger: 'change' }
     ],
     begin: [
-        { required: true, message: '请输入开始时间', trigger: 'blur' }
+        { required: true, message: '请输入开始时间', trigger: 'blur' },
+        { pattern: /^\d{8}$/, message: '请输入8位数字日期（如20240101）', trigger: 'blur' }
     ],
     end: [
-        { required: true, message: '请输入结束时间', trigger: 'blur' }
+        { required: true, message: '请输入结束时间', trigger: 'blur' },
+        { pattern: /^\d{8}$/, message: '请输入8位数字日期（如20250101）', trigger: 'blur' }
+    ],
+    test_params: [
+        { required: true, message: '请输入参数配置', trigger: 'blur' },
+        { validator: validateJson, trigger: 'blur' } // 新增JSON验证
     ]
 })
-const router = useRouter()
 
-// 在参数处理逻辑中添加
-const shouldShowFixed = (param: any) => {
-    // 回测模式或参数禁止优化时显示固定值
-    return form.type === 0 || (form.type === 1 && !param.optimization)
-}
-
-const buildParams = () => {
-    const params: Record<string, any> = {}
-
-    currentStrategyParams.value.forEach(param => {
-        const { name, value_type, } = param
-
-        // 根据参数类型决定取值方式
-        if (shouldShowFixed(param)) {
-            // 固定值处理
-            const value = form.test_params_fixed[name]
-            console.log(value,value_type)
-
-            params[name] = convertValueType(value, value_type)
-        } else {
-            // 优化参数处理
-            const range = form.test_params_range[name]
-            if (range) {
-                params[name] = {
-                    from: convertValueType(range.from, value_type),
-                    to: convertValueType(range.to, value_type),
-                    step: convertValueType(range.step, value_type)
-                }
-            }
-        }
-    })
-
-
-    return params
-}
 
 // 表单提交
 const submitForm = async () => {
@@ -247,14 +172,8 @@ const submitForm = async () => {
 
         // 构建提交数据
         const payload = {
-            id: form.id,
-            strategy_id: form.strategy_id,
-            name: form.name,
-            tag: form.tag,
-            begin: form.begin,
-            end: form.end,
-            type: form.type,
-            test_params: buildParams()
+            ...form,
+            test_params: JSON.parse(form.test_params) // 解析为对象提交
         }
 
         // 处理创建/更新
@@ -262,7 +181,7 @@ const submitForm = async () => {
         const response = await (isCreate
             ? api.addTest(payload)
             : api.updateTest(payload))
-
+        console.log(payload)
         // 处理结果
         ElMessage.success(isCreate ? '添加成功' : '更新成功')
         // 路由跳转逻辑
@@ -287,7 +206,7 @@ const loadStrategies = async () => {
             name: item.name || `未命名策略-${item.id}`,
             author: item.author || '未知作者',
             creation_time: item.creation_time,
-            parameters: item.parameters
+            parameters: item.parameters || [] // 确保parameters存在（关键
         }))
         strategiesLoaded.value = true // 标记加载完成
     } catch (error) {
@@ -297,90 +216,68 @@ const loadStrategies = async () => {
     }
 }
 
-// 独立初始化方法
+// 核心：根据策略parameters生成初始化JSON
+const generateParamsJson = (strategy: Strategy) => {
+    if (!strategy.parameters || strategy.parameters.length === 0) {
+        return '{}' // 无参数时返回空对象
+    }
+
+    // 根据模式生成不同格式的JSON
+    if (form.type === 0) {
+        // 回测模式：{ paramName: defaultValue, ... }
+        const params: Record<string, any> = {}
+        strategy.parameters.forEach(param => {
+            // 使用参数默认值，无默认值则根据类型设初始值
+            params[param.name] = param.default_value ?? (param.value_type === 'float' ? 0 : 0)
+        })
+        return JSON.stringify(params, null, 2) // 格式化JSON，便于编辑
+    } else {
+        // 优化模式：区分可优化和不可优化参数
+        const params: Record<string, any> = {}
+        strategy.parameters.forEach(param => {
+            if (param.optimization === false) {
+                // optimization: false 时显示固定值（同回测模式）
+                params[param.name] = param.default_value ?? (param.value_type === 'float' ? 0 : 0)
+            } else {
+                // 可优化参数显示范围
+                params[param.name] = {
+                    from: param.min_value ?? 0,
+                    to: param.max_value ?? (param.value_type === 'float' ? 1 : 10),
+                    step: param.step ?? (param.value_type === 'float' ? 0.1 : 1)
+                }
+            }
+        })
+        return JSON.stringify(params, null, 2)
+    }
+}
+
+
+// 初始化表单数据
 const initFormData = () => {
     if (!props.initialData || !strategiesLoaded.value) return
 
-    const targetStrategy = strategies.value.find(
-        s => s.id === props.initialData.strategy_id
-    )
+    const targetStrategy = strategies.value.find(s => s.id === props.initialData.strategy_id)
+    if (!targetStrategy) return;
 
-    if (!targetStrategy) {
-        ElMessage.warning('关联策略不存在')
-        return
+    // 深拷贝并初始化基础字段
+    const safeInitialData = deepClone(props.initialData)
+    deepAssign(form, safeInitialData)
+
+    // 强制使用后端返回的 test_params（即使为空也不生成默认值）
+    if (props.initialData.test_params) {
+        form.test_params = props.initialData.test_params
+    } else if (props.mode !== 'edit') {
+        // 仅新建模式且无后端数据时生成默认值
+        form.test_params = generateParamsJson(targetStrategy)
     }
 
-    // 初始化基础字段
-    Object.assign(form, {
-        id: props.initialData.id,
-        strategy_id: props.initialData.strategy_id,
-        name: props.initialData.name,
-        tag: props.initialData.tag,
-        begin: props.initialData.begin,
-        end: props.initialData.end,
-        type: props.initialData.type
-    })
-
-
-    // // 处理逻辑
-    // targetStrategy.parameters.forEach(param => {
-    //     // 处理固定参数
-    //     form.test_params_fixed[param.name] =
-    //         props.initialData.test_params_fixed?.[param.name] ?? null
-
-    //     // 处理优化参数
-    //     const savedRange = (props.initialData.test_params_range || {})[param.name] as {
-    //         from?: number | null
-    //         to?: number | null
-    //         step?: number | null
-    //     } || {} // 类型断言 + 默认值
-
-    //     form.test_params_range[param.name] = {
-    //         from: savedRange.from ?? null, // 安全访问
-    //         to: savedRange.to ?? null,
-    //         step: savedRange.step ?? null
-    //     }
-
-    //     console.log("param", param)
-    //     console.log("form", form.test_params_range)
-    // })
-    targetStrategy.parameters.forEach(param => {
-        // 确保所有参数都有初始化值
-        if (param.optimization) {
-            // 范围参数初始化
-            form.test_params_range[param.name] = {
-                from: convertValueType(
-                    props.initialData?.test_params_range?.[param.name]?.from ?? null,
-                    param.value_type
-                ),
-                to: convertValueType(
-                    props.initialData?.test_params_range?.[param.name]?.to ?? null,
-                    param.value_type
-                ),
-                step: convertValueType(
-                    props.initialData?.test_params_range?.[param.name]?.step ??
-                    (param.value_type === 'float' ? 0.1 : 1),
-                    param.value_type
-                )
-            }
-        } else {
-            // 固定值初始化到固定参数区
-            form.test_params_range[param.name] = convertValueType(
-                props.initialData?.test_params_range?.[param.name] ?? null,
-                param.value_type
-            )
-        }
-
-        // 回测模式全部使用固定值
-        form.test_params_fixed[param.name] = convertValueType(
-            props.initialData?.test_params_fixed?.[param.name] ?? null,
-            param.value_type
-        )
-    })
-
+    // 编辑模式：缓存后端参数，防止后续被覆盖
+    if (props.mode === 'edit' && form.strategy_id) {
+        paramCache[form.strategy_id] = form.test_params
+    }
 }
 
-//#region 钩子函数
+//#region 定义Props和Emits
 const emit = defineEmits(['submit', 'cancel'])
 
 const props = defineProps({
@@ -390,24 +287,18 @@ const props = defineProps({
         validator: (value: string) => ['create', 'edit', 'view'].includes(value)
     },
     initialData: {
-        type: Object as PropType<TestModel>,
+        type: Object as PropType<Test>,
         default: () => ({
             id: null,
             name: '',
             strategy_id: '',
-            tag: '' as '' | 'ZL' | 'JQ',
+            tag: '',
             begin: '',
             end: '',
             type: 0,
-            test_params_fixed: {},
-            test_params_range: {}
+            test_params: ''
         })
     }
-})
-
-const strategyName = computed(() => {
-    const found = strategies.value.find(s => s.id === form.strategy_id)
-    return found ? found.name : '未知策略'
 })
 
 const currentStrategyParams = computed(() => {
@@ -416,83 +307,122 @@ const currentStrategyParams = computed(() => {
     return strategy?.parameters || []
 })
 
+const fixedExampleWithLabels = computed(() => {
+  const strategy = strategies.value.find(s => s.id === form.strategy_id)
+  if (!strategy || !strategy.parameters?.length) {
+    return '示例:\n{}'  // 增加换行
+  }
+  
+  let exampleStr = "{\n"
+  strategy.parameters.forEach((param, index) => {
+    const key = param.name
+    const value = param.default_value
+    const desc = param.display_name 
+    // 增加缩进和换行
+    exampleStr += `  // ${desc}\n`
+    exampleStr += `  "${key}": ${JSON.stringify(value)}`
+    if (index < strategy.parameters.length - 1) {
+      exampleStr += ","
+    }
+    exampleStr += "\n"
+  })
+  exampleStr += "}"
+  
+  // 拆分成单独的换行显示
+  return `示例:\n${exampleStr}`
+})
+
+// 修改 rangeExampleWithLabels 计算属性
+const rangeExampleWithLabels = computed(() => {
+  const strategy = strategies.value.find(s => s.id === form.strategy_id)
+  if (!strategy || !strategy.parameters?.length) {
+    return '示例:\n{}'
+  }
+  
+  let exampleStr = "{\n"
+  const allParams = strategy.parameters // 改为处理所有参数
+  let lastOptimizableIndex = -1
+  
+  // 先找到最后一个可优化参数的索引，用于正确添加逗号
+  allParams.forEach((param, index) => {
+    if (param.optimization !== false) {
+      lastOptimizableIndex = index
+    }
+  })
+  
+  allParams.forEach((param, index) => {
+    const key = param.name
+    const desc = param.display_name
+    exampleStr += `  // ${desc}\n`
+    
+    if (param.optimization === false) {
+      // optimization: false 时显示固定值示例
+      const value = param.default_value
+      exampleStr += `  "${key}": ${JSON.stringify(value)}`
+    } else {
+      // 可优化参数显示范围示例
+      exampleStr += `  "${key}": {\n`
+      exampleStr += `    "from": ${param.min_value ?? 1},\n`
+      exampleStr += `    "to": ${param.max_value ?? (param.value_type === 'float' ? 1 : 10)},\n`
+      exampleStr += `    "step": ${param.step ?? (param.value_type === 'float' ? 0.1 : 1)}\n`
+      exampleStr += "  }"
+    }
+    
+    // 只有当前是可优化参数且不是最后一个可优化参数时才加逗号
+    if (param.optimization !== false && index !== lastOptimizableIndex) {
+      exampleStr += ","
+    }
+    exampleStr += "\n"
+  })
+  exampleStr += "}"
+  
+  return `示例:\n${exampleStr}`
+})
+
+
+watch(() => form.strategy_id, (newVal, oldVal) => {
+    if (oldVal) paramCache[oldVal] = form.test_params // 缓存旧策略参数
+
+    if (newVal) {
+        const newStrategy = strategies.value.find(s => s.id === newVal)
+        if (newStrategy) {
+            // 编辑模式：保留当前参数，不自动生成
+            if (props.mode === 'edit') {
+                return;
+            }
+            // 新建模式：仅参数为空时生成默认值
+            form.test_params = paramCache[newVal] || (
+                form.test_params.trim() ? form.test_params : generateParamsJson(newStrategy)
+            )
+        }
+    }
+})
+
+// 监听模式切换（回测/优化）：重新生成参数格式
+watch(() => form.type, (newType, oldType) => {
+    if (newType === oldType) return
+
+    // 编辑模式：不自动生成，保留用户输入
+    if (props.mode === 'edit') {
+        return
+    }
+        
+    if (form.strategy_id) {
+        const strategy = strategies.value.find(s => s.id === form.strategy_id)
+        if (strategy && !form.test_params.trim()) {
+            form.test_params = generateParamsJson(strategy)
+        }
+    }
+})
+
 watch(() => props.initialData, () => {
     if (strategiesLoaded.value) {
         initFormData()
     }
 }, { deep: true })
 
-watch(() => form.strategy_id, (newVal, oldVal) => {
-    // 获取新旧策略对象
-    const newStrategy = strategies.value.find(s => s.id === newVal)
-    const oldStrategy = strategies.value.find(s => s.id === oldVal)
-
-    // 当离开旧策略时缓存参数
-    if (oldVal && oldStrategy) {
-        paramCache[oldVal] = {
-            fixed: { ...form.test_params_fixed },
-            range: deepClone(form.test_params_range) // 需要深拷贝
-        }
-    }
-
-    // 应用新策略参数逻辑
-    if (newStrategy) {
-        // 优先从缓存恢复
-        const cachedParams = paramCache[newVal]
-
-        // 初始化参数结构
-        const initialFixed: Record<string, any> = {}
-        const initialRange: Record<string, any> = {}
-
-        newStrategy.parameters.forEach(param => {
-            // // 固定参数处理
-            // initialFixed[param.name] = cachedParams?.fixed[param.name]
-            //     ?? props.initialData.test_params_fixed?.[param.name]
-            //     ?? null
-
-            // // 优化参数处理
-            // initialRange[param.name] = {
-            //     from: cachedParams?.range[param.name]?.from
-            //         ?? props.initialData.test_params_range?.[param.name]?.from
-            //         ?? null,
-            //     to: cachedParams?.range[param.name]?.to
-            //         ?? props.initialData.test_params_range?.[param.name]?.to
-            //         ?? null,
-            //     step: cachedParams?.range[param.name]?.step
-            //         ?? props.initialData.test_params_range?.[param.name]?.step
-            //         ?? null
-            // }
-            // 通用逻辑：根据模式初始化参数
-            if (param.optimization) {
-                initialRange[param.name] = {
-                    from: cachedParams?.range[param.name]?.from
-                        ?? props.initialData.test_params_range?.[param.name]?.from
-                        ?? null,
-                    to: cachedParams?.range[param.name]?.to
-                        ?? props.initialData.test_params_range?.[param.name]?.to
-                        ?? null,
-                    step: cachedParams?.range[param.name]?.step
-                        ?? props.initialData.test_params_range?.[param.name]?.step
-                        ?? null
-                }
-            } else {
-                initialRange[param.name] = cachedParams?.range[param.name]
-                    ?? props.initialData.test_params_range?.[param.name]
-                    ?? null
-            }
-            initialFixed[param.name] = cachedParams?.fixed[param.name]
-                ?? props.initialData.test_params_fixed?.[param.name]
-                ?? null
-        })
-
-        // 响应式更新（保留非策略参数字段）
-        form.test_params_fixed = { ...initialFixed }
-        form.test_params_range = deepClone(initialRange) // 需要深拷贝
-    }
-})
-
-
-
+// 页面加载时执行
+const router = useRouter()
 onMounted(async () => {
     await loadStrategies() // 确保先加载策略
     // 仅当有初始数据时处理
@@ -507,6 +437,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.json-hint {
+  white-space: pre-wrap;  /* 保留换行和空格 */
+  word-break: break-all;  /* 允许在单词内换行 */
+  color: #606266;
+  line-height: 1.4; /* 减小示例文本行高 */
+}
+
+/* 针对参数配置文本框的显示设置 */
+:deep(.el-textarea__inner) {
+  white-space: pre-wrap;  /* 文本框内显示时自动换行 */
+  word-break: break-all;
+}
+
+
 .strategy-option {
     display: flex;
     justify-content: space-between;
